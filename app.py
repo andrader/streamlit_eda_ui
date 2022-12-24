@@ -1,7 +1,8 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
-from filters import *
+from stedaui.filters import *
+
 
 @st.cache(suppress_st_warning=True)
 def load_data():
@@ -30,11 +31,21 @@ with st.sidebar:
 
     st.title("Sidebar")
 
+    tabnames = ["filter","histogram","scatter"]
+
     del_filters = st.button("Delete filters", on_click=reset_filters, args=(df,))
     
     filters.show_add()
     filters.show_filters()
 
+
+
+def load_csv():
+
+    st.write("Load csv")
+
+
+load_csv()
 
 # st.write("creating")
 # a = Filter("aaa","bbb","ccc")

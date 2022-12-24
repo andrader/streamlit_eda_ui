@@ -1,14 +1,11 @@
-from dataclasses import dataclass
+import typing as t
+from dataclasses import dataclass, field
 from functools import reduce
-from pandas.api.types import (
-    is_categorical_dtype,
-    is_datetime64_any_dtype,
-    is_numeric_dtype,
-    is_object_dtype,
-)
+
 import pandas as pd
 import streamlit as st
-from typing import Any, Union
+from pandas.api.types import (is_categorical_dtype, is_datetime64_any_dtype,
+                              is_numeric_dtype, is_object_dtype)
 
 
 def convert_types(df):
@@ -94,8 +91,8 @@ def filter_col(df, column):
 @dataclass
 class Filter():
     column: str
-    val: Any
-    mask: pd.Series
+    val: t.Any
+    mask: pd.Series = None
 
     def show(self):
         ex = st.expander(f'**{self.column}**: {self.val}', expanded=False)
