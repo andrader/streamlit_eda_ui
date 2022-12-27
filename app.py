@@ -1,8 +1,11 @@
+from time import sleep
+
 import pandas as pd
 import streamlit as st
+from streamlit import session_state as state
 
 from stedaui.filters import *
-
+from stedaui.data import container_file_uploader, create_tabs, container_load_query
 
 @st.cache(suppress_st_warning=True)
 def load_data():
@@ -11,54 +14,61 @@ def load_data():
     return iris
 
 
+def init_state(key, value):
+    if key not in state:
+        print(f"Initializing {key}={str(value)}")
+        if callable(value):
+            state[key] = value()
+        else:
+            state[key] = value
+
 
 def reset_filters(df):
-    st.warning("reseting filters")
-    st.session_state["filters"] = Filters(df)
+    # with st.spinner("reseting filters"):
+        #pass#sleep(0.2)
+    state["filters"] = Filters(df)
 
 
 st.set_page_config("App", layout="wide", initial_sidebar_state="expanded")
 st.write("Hello world!")
 df = load_data()
 
-if "filters" not in st.session_state:
-    st.write("Creating Filters(df)")
-    reset_filters(df)
-filters = st.session_state["filters"]
+
+init_state("filters", lambda: Filters(df))
+filters = state["filters"]
+
+init_state("datasets", dict())
 
 
 with st.sidebar:
+    tabs = create_tabs(["Load", "Select", "Filter", "Plot"])
 
-    st.title("Sidebar")
+with tabs["Load"]:
+    loadtabs = create_tabs(["Upload File", "SQL", "URL"])
 
-    tabnames = ["filter","histogram","scatter"]
+    with loadtabs["SQL"]:
+        container_load_query()
+    
+    with loadtabs["Upload File"]:
+        container_file_uploader()
+             
+            
 
+
+
+with tabs["Filter"]:
     del_filters = st.button("Delete filters", on_click=reset_filters, args=(df,))
     
     filters.show_add()
     filters.show_filters()
 
+#st.dataframe(filters.show_df())
 
 
-def load_csv():
+if state.datasets:
 
-    st.write("Load csv")
+    dftabs = create_tabs(state.datasets)
 
-
-load_csv()
-
-# st.write("creating")
-# a = Filter("aaa","bbb","ccc")
-# st.write("above")
-# b = a.show()
-# with b:
-#     st.write("test 2")
-# st.write("bellow")
-# with b:
-#     st.write("test 3")
-
-#st.write(filters)
-#st.write(filters.filters)
-st.dataframe(filters.show_df())
-#st.dataframe(df)
-
+    for name in dftabs:
+        with dftabs[name]:
+            st.dataframe(state.datasets[name], use_container_width=True, height=200)
