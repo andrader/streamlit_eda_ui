@@ -28,41 +28,32 @@ def _get_args_dict(func, args, kwargs, include, exclude):
 
 def _create_widgets(func, args_dict):
 
-    print(args_dict)
-
-    # key = function_name + arg_name + container_hash
     key_template = "{funcname}_{{argname}}_{rnd_id:0>20}".format_map(dict(funcname=func.__name__, rnd_id=randint(1,10e8)))
 
     func_name = func.__name__
+
+    if st.button("delete funcstate"):
+        del wstate[func_name]
+
+    
     if func_name not in wstate:
-        print(f"creating state for {func_name}")
         wstate[func_name] = {}
-    else:
-        print(f"found state for {func_name}")
     
     func_state = wstate[func_name]
-    print(func_state)
+    
 
     print("XXXXXX")
+    print(f"{func_state=}")
+    d = {}
     for k,v in args_dict.items():
         # if include and k not in include:
         #     continue
         # if exclude and k in exclude:
         #     continue
         key=key_template.format(argname=k)
-
-        func_state.get(k, v)
-
-        print(k, func_state.get(k))
-
-        if isinstance(v, list):
-            func_state[k] = st.selectbox(k, options=v, key=key)
-        elif isinstance(v, int):
-            func_state[k] = st.number_input(k, value=v, key=key)
-        elif isinstance(v, str):
-            func_state[k] = st.text_input(k, value=v, key=key)
+        d[k] = st.text_input(k, value=func_state.get(k, v), key=key)
     
-    return func_state
+    return d
 
 
 # TODO: aceitar kwargs da func na factory com o 'tipo' de widget para criar
@@ -82,6 +73,7 @@ def stfy_factory(*_args, container=None, include=None, exclude=[], widgets_posit
 
         @wraps(func)
         def wrapper(*args, **kwargs):
+            func_name = func.__name__
             args_dict = _get_args_dict(func, args, kwargs, include, exclude)
 
             nonlocal container
@@ -90,11 +82,17 @@ def stfy_factory(*_args, container=None, include=None, exclude=[], widgets_posit
             
             with container:
                 st.write("##### Input")
-                _create_widgets(func, args_dict)
+                inputs = {}
+                for k,v in args_dict.items():
+                    inputs[k] = st.text_input(k, value=_get_arg_from_state(func_name, k) or v)
             
-            st.write("##### Output")
-            func_state = wstate[func.__name__]
-            res = func(**func_state)
+                print(f"{inputs=}")
+
+                st.write("##### Output")
+                res = func(**inputs)
+                if func_name not in wstate:
+                    wstate[func_name] = {}
+            #func_state = wstate[func_name]
             
             
             return res
@@ -114,11 +112,13 @@ if __name__=="__main__":
     st.subheader("Example 1")
     with st.echo(code_location="above"):
         @stfy_factory()
-        def foo(arg1, arg2):
-            st.write(f"this is foo({arg1}, {arg2})")
-            print(f"this is foo({arg1}, {arg2})")
+        def foo(arg1):
+            st.write(f"this is foo({arg1})")
+            print(f"this is foo({arg1})")
         
-        foo(arg1=1, arg2="text")
+        foo(arg1=1)
+
+        foo(arg1=2)
     
     # st.subheader("Example 2")
     # with st.echo(code_location="above"):
