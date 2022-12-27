@@ -5,3 +5,4 @@ plotly
 streamlit
 jupyter
 ipykernel
+openpyxl
